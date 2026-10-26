@@ -33,7 +33,7 @@ async def test_calculate_rejects_code_execution() -> None:
             {"expression": "__import__('os').system('echo pwned')"},
         )
     assert result.is_error is True
-    assert "not allowed" in result.content[0].text.lower() or "Unknown" in result.content[0].text
+    assert "allowed" in result.content[0].text.lower()
 
 
 async def test_fetch_tool_refuses_file_urls() -> None:
@@ -78,6 +78,8 @@ async def test_agent_loop_over_stdio() -> None:
         assert names == EXPECTED_TOOLS
         calculate = next(spec for spec in await session.list_tools() if spec.name == "calculate")
         assert "title" not in calculate.parameters
+        assert calculate.description.startswith("Evaluate an arithmetic expression.")
+        assert "\n        " not in calculate.description
         result = await run_turn(
             [{"role": "user", "content": "what is 6 * 7?"}],
             session,

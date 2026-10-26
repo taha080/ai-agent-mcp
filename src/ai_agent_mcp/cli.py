@@ -6,12 +6,13 @@ import argparse
 import asyncio
 import json
 import sys
+import textwrap
 from typing import Any
 
 from ai_agent_mcp import __version__
 from ai_agent_mcp.agent.llm import LLMError, build_model
 from ai_agent_mcp.agent.loop import build_system_prompt, run_turn
-from ai_agent_mcp.agent.models import ToolTrace
+from ai_agent_mcp.agent.models import ToolSpec, ToolTrace
 from ai_agent_mcp.agent.session import StdioToolSession
 from ai_agent_mcp.config import ConfigError, Settings, load_settings
 
@@ -94,11 +95,7 @@ def main(argv: list[str] | None = None) -> None:
 async def _print_tools() -> None:
     async with StdioToolSession() as session:
         specs = await session.list_tools()
-    if not specs:
-        print("No tools registered.")
-        return
-    for spec in sorted(specs, key=lambda item: item.name):
-        print(f"{spec.name}\n  {spec.description}\n")
+    _print_tool_list(specs)
 
 
 async def _ask(question: str, settings: Settings, model: Any) -> None:
@@ -141,8 +138,7 @@ async def _chat(settings: Settings, model: Any) -> None:
             if line.lower() in {"/exit", "/quit", "exit", "quit"}:
                 return
             if line == "/tools":
-                for spec in sorted(specs, key=lambda item: item.name):
-                    print(f"{spec.name}: {spec.description}")
+                _print_tool_list(specs)
                 continue
             start = len(messages)
             messages.append({"role": "user", "content": line})
@@ -159,6 +155,17 @@ async def _chat(settings: Settings, model: Any) -> None:
                 print(f"error: {exc}", file=sys.stderr)
                 continue
             print(f"agent> {result.answer}")
+
+
+def _print_tool_list(specs: list[ToolSpec]) -> None:
+    if not specs:
+        print("No tools registered.")
+        return
+    for spec in sorted(specs, key=lambda item: item.name):
+        print(spec.name)
+        if spec.description:
+            print(textwrap.indent(spec.description, "  "))
+        print()
 
 
 def _full_trace(event: ToolTrace) -> None:

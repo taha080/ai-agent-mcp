@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import json
 import sys
 from contextlib import AsyncExitStack
@@ -110,6 +111,6 @@ def _spec(tool: Tool) -> ToolSpec:
                 prop.pop("title", None)
     return ToolSpec(
         name=tool.name,
-        description=(tool.description or "").strip(),
+        description=inspect.cleandoc(tool.description or "").strip(),
         parameters=schema,
     )
